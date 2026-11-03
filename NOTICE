@@ -1,0 +1,15 @@
+Zero Wire MCP is an unofficial, independent project. It is not affiliated with,
+endorsed by, or supported by Cloudflare, Inc. "Cloudflare" and "Zero Wire" are
+used only to identify the data source.
+
+The MIT License in this repository covers only this project's original code.
+
+It does not cover Cloudflare Zero Wire briefings, assessment prompts, or any
+other content retrieved at runtime. That content belongs to Cloudflare and its
+cited sources. None of it is included in this package, and no license to it is
+granted by this project.
+
+Rights to automated use of Zero Wire RSS content have not been definitively
+established. See "Content rights" in README.md.
+
+Source: https://radar.cloudflare.com/security/zero-wire

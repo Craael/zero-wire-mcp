@@ -81,6 +81,8 @@ export class FeedClient {
             Accept: "application/rss+xml, application/xml;q=0.9",
           },
           signal: AbortSignal.timeout(this.timeoutMs),
+          // The feed doesn't redirect. Following one could present another host's content as Cloudflare's.
+          redirect: "manual",
         });
 
         if (response.ok) return await this.readFeed(response);
@@ -121,17 +123,21 @@ export class FeedClient {
   private async readFeed(response: Response): Promise<FeedResult> {
     const contentType = response.headers.get("content-type") ?? "";
     if (!/xml/i.test(contentType)) {
-      throw new FeedError("invalid", `Expected an RSS feed from ${this.url} but received "${contentType || "no content type"}".`);
+      throw new FeedError("invalid", `Expected an RSS feed from ${this.url} but received a different content type.`);
     }
-    if (Number(response.headers.get("content-length")) > MAX_BYTES) {
-      throw new FeedError("invalid", `The feed at ${this.url} exceeds the ${MAX_BYTES} byte limit.`);
-    }
-    const body = await response.text();
-    if (Buffer.byteLength(body) > MAX_BYTES) {
-      throw new FeedError("invalid", `The feed at ${this.url} exceeds the ${MAX_BYTES} byte limit.`);
+    const tooLarge = () => new FeedError("invalid", `The feed at ${this.url} exceeds the ${MAX_BYTES} byte limit.`);
+    if (Number(response.headers.get("content-length")) > MAX_BYTES) throw tooLarge();
+
+    // Counted while streaming, after decompression, so oversized or compressed bodies are never buffered whole.
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for await (const chunk of response.body ?? []) {
+      total += chunk.length;
+      if (total > MAX_BYTES) throw tooLarge();
+      chunks.push(chunk);
     }
 
-    const feed = parseFeed(body);
+    const feed = parseFeed(Buffer.concat(chunks).toString("utf8"));
     if (feed.skippedItems > 0) {
       console.error(`[zero-wire-mcp] skipped ${feed.skippedItems} feed item(s) that failed validation`);
     }

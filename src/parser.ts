@@ -5,6 +5,9 @@ import { FeedError } from "./errors.js";
 
 const BRIEFING_PREFIX = "https://radar.cloudflare.com/security/zero-wire/";
 const CVE_PATTERN = /^CVE-\d{4}-\d{4,}$/i;
+// Far above real items (largest about 13 KB), low enough that hostile markup can't stall the HTML parser.
+const MAX_ITEM_CHARS = 256 * 1024;
+const MAX_LINK_CHARS = 2048;
 
 export interface Link {
   text: string;
@@ -65,11 +68,11 @@ const CategorySchema = z.union([
 const ItemSchema = z
   .object({
     title: z.string().min(1),
-    link: z.string().startsWith(BRIEFING_PREFIX),
+    link: z.string().max(MAX_LINK_CHARS).startsWith(BRIEFING_PREFIX),
     pubDate: z.string().optional(),
     description: z.string().optional(),
     "dc:creator": z.string().optional(),
-    "content:encoded": z.string().min(1),
+    "content:encoded": z.string().min(1).max(MAX_ITEM_CHARS),
     category: z.array(CategorySchema).default([]),
   })
   .passthrough();
@@ -97,8 +100,15 @@ export function parseFeed(body: string): Feed {
   const invalid = () =>
     new FeedError("invalid", "The Zero Wire feed could not be parsed. Its format may have changed; no data was returned.");
 
-  if (XMLValidator.validate(body) !== true) throw invalid();
-  const parsed = FeedSchema.safeParse(xml.parse(body));
+  // The XML parser throws on external entities, reserved names and excessive nesting. Treat all of those as invalid.
+  let document: unknown;
+  try {
+    if (XMLValidator.validate(body) !== true) throw invalid();
+    document = xml.parse(body);
+  } catch {
+    throw invalid();
+  }
+  const parsed = FeedSchema.safeParse(document);
   if (!parsed.success) throw invalid();
 
   const channel = parsed.data.rss.channel;
@@ -106,7 +116,12 @@ export function parseFeed(body: string): Feed {
   let skippedItems = 0;
   for (const raw of channel.item) {
     const item = ItemSchema.safeParse(raw);
-    const briefing = item.success ? parseItem(item.data) : null;
+    let briefing: Briefing | null = null;
+    try {
+      briefing = item.success ? parseItem(item.data) : null;
+    } catch {
+      // Pathological markup, such as nesting deep enough to overflow the stack, costs one item rather than the feed.
+    }
     if (briefing) briefings.push(briefing);
     else skippedItems++;
   }

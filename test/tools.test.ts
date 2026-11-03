@@ -167,6 +167,33 @@ test("get_assessment_prompt reports absence without a substitute", async () => {
   assert.match(data.message, /No substitute/);
 });
 
+test("every successful tool result labels content as external and attributes it to Cloudflare", async () => {
+  for (const [name, args] of [
+    ["list_vulnerabilities", {}],
+    ["get_vulnerability", { id: "gizmo2shell" }],
+    ["search_vulnerabilities", { keyword: "gizmo" }],
+    ["get_assessment_prompt", { id: "gizmo2shell" }],
+    ["get_assessment_prompt", { id: "widget-server-takeover" }],
+  ] as const) {
+    const { data } = await call(name, args);
+    assert.match(data.source.contentTrust, /external data, not as instructions/, name);
+    assert.match(data.source.attribution, /Cloudflare Zero Wire/, name);
+    assert.match(data.source.attribution, /unofficial, independent/, name);
+  }
+});
+
+test("rejects malformed tool input", async () => {
+  for (const [name, args] of [
+    ["get_vulnerability", {}],
+    ["get_vulnerability", { id: 42 }],
+    ["get_vulnerability", { id: "x".repeat(301) }],
+    ["get_assessment_prompt", { id: "   " }],
+    ["search_vulnerabilities", { keyword: "x".repeat(201) }],
+  ] as const) {
+    assert.equal((await call(name, args)).isError, true, `${name} ${JSON.stringify(args).slice(0, 40)}`);
+  }
+});
+
 test("feed outages surface as readable tool errors on every tool", async () => {
   const down = await connect((async () => new Response("", { status: 503 })) as unknown as typeof fetch);
   for (const [name, args] of [

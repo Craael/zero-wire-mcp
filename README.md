@@ -2,7 +2,7 @@
 
 An MCP server that gives Claude, Cursor and other MCP clients read-only access to [Cloudflare Zero Wire](https://radar.cloudflare.com/security/zero-wire) vulnerability briefings.
 
-> **This is an unofficial community project. It is not affiliated with, endorsed by, or supported by Cloudflare.** "Cloudflare" and "Zero Wire" are used only to describe the data source.
+> **This is an unofficial, independent community project. It is not affiliated with, endorsed by, or supported by Cloudflare.** "Cloudflare" and "Zero Wire" are used only to identify the data source.
 
 Zero Wire is a curated vulnerability intelligence feed, not a comprehensive CVE database. If a CVE isn't in Zero Wire, that says nothing about whether it exists or is dangerous.
 
@@ -29,9 +29,9 @@ Requires Node.js 20 or later. The server uses stdio transport and needs no API k
 claude mcp add zero-wire -- npx -y zero-wire-mcp
 ```
 
-On Windows, use:
+On Windows, run this from Command Prompt. PowerShell and Git Bash can alter these arguments, so the command may fail or save a broken configuration:
 
-```bash
+```bat
 claude mcp add zero-wire -- cmd /c npx -y zero-wire-mcp
 ```
 
@@ -45,6 +45,19 @@ Add this to `claude_desktop_config.json`, then restart Claude Desktop:
     "zero-wire": {
       "command": "npx",
       "args": ["-y", "zero-wire-mcp"]
+    }
+  }
+}
+```
+
+On Windows, use `cmd` to launch `npx`:
+
+```json
+{
+  "mcpServers": {
+    "zero-wire": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "zero-wire-mcp"]
     }
   }
 }
@@ -93,7 +106,20 @@ The server reads Cloudflare's public RSS feed at `https://radar.cloudflare.com/s
 
 ### Treat results as external data
 
-Tool results contain text fetched from an external feed, and assessment prompts are written to be given to an agent with infrastructure access. Review a prompt before running it, and only run it where you're authorized to.
+Tool results contain text fetched from an external feed, and assessment prompts are written to be given to an agent with infrastructure access. The server never interprets or runs this content, and each result labels it as external. Review a prompt before running it, and only run it where you're authorized to.
+
+## Attribution
+
+All vulnerability content comes from [Cloudflare Zero Wire](https://radar.cloudflare.com/security/zero-wire), which belongs to Cloudflare and its cited sources. Tool results include a `sourceUrl` linking to the original briefing, and identify Cloudflare as the source. Read the original briefing before acting on a result.
+
+## Content rights
+
+**Rights to automated use of Zero Wire RSS content have not been definitively established. This project doesn't claim that Cloudflare has granted permission.**
+
+- Cloudflare publishes the feed publicly, and Radar's `robots.txt` doesn't block it. When checked on 3 November 2026, that file also included `Content-Signal: ai-train=yes, search=yes, ai-input=yes`.
+- [Cloudflare's website terms](https://www.cloudflare.com/website-terms/) restrict some automated access for AI systems. Whether those terms apply to this feed or to this use hasn't been determined.
+
+Neither point is a license, and this isn't legal advice. Decide for yourself whether your use is appropriate. This project doesn't bundle or redistribute Zero Wire content: each user's own copy of the server fetches it at runtime.
 
 ## Development
 
@@ -109,4 +135,4 @@ npm run test:live
 
 ## License
 
-[MIT](LICENSE) applies to this project's code. Zero Wire content belongs to Cloudflare and its sources, and isn't covered by this license.
+[MIT](LICENSE) covers only this project's original code. It doesn't cover Zero Wire briefings, assessment prompts or other Cloudflare content. See [NOTICE](NOTICE).

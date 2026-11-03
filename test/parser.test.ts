@@ -98,6 +98,48 @@ test("rejects content that is not a Zero Wire feed", () => {
   }
 });
 
+const hostile = (items: string, prolog = "") =>
+  `<?xml version="1.0"?>${prolog}<rss xmlns:content="c"><channel>${items}</channel></rss>`;
+const hostileItem = (html: string, link = "https://radar.cloudflare.com/security/zero-wire/ok") =>
+  `<item><title>T</title><link>${link}</link><content:encoded><![CDATA[${html}]]></content:encoded></item>`;
+
+test("reports external entities and prototype pollution attempts as invalid feeds", () => {
+  const external = hostile(hostileItem("<p>x</p>"), `<!DOCTYPE rss [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>`);
+  const pollution = hostile(`${hostileItem("<p>x</p>")}<__proto__ polluted="yes"/>`);
+  for (const body of [external, pollution]) {
+    assert.throws(() => parseFeed(body), (error: FeedError) => error instanceof FeedError && error.kind === "invalid");
+  }
+  assert.equal(({} as Record<string, unknown>).polluted, undefined);
+});
+
+test("skips oversized items and links without stalling", () => {
+  const good = hostileItem("<p>x</p>");
+  const started = Date.now();
+  const result = parseFeed(
+    hostile(
+      good +
+        hostileItem("<a>".repeat(400_000)) +
+        hostileItem("<p>x</p>", `https://radar.cloudflare.com/security/zero-wire/${"/".repeat(400_000)}a`),
+    ),
+  );
+  assert.equal(result.briefings.length, 1);
+  assert.equal(result.skippedItems, 2);
+  assert.ok(Date.now() - started < 5000);
+});
+
+test("loses only the affected item when markup overflows the stack", () => {
+  const result = parseFeed(hostile(hostileItem("<p>x</p>") + hostileItem(`${"<div>".repeat(50_000)}x`)));
+  assert.equal(result.briefings.length, 1);
+  assert.equal(result.skippedItems, 1);
+});
+
+test("treats active markup as inert text and keeps only web links", () => {
+  const html = `<p>intro</p><h2>Evidence and sources</h2><h3>E</h3><ul><li><a href="javascript:alert(1)">a</a></li><li><a href="file:///etc/passwd">b</a></li><li><a href="data:text/html,x">c</a></li><li><a href="https://ok.example/">d</a></li></ul><script>globalThis.ZERO_WIRE_PWNED = true</script>`;
+  const [briefing] = parseFeed(hostile(hostileItem(html))).briefings;
+  assert.deepEqual(briefing?.evidence[0]?.links, [{ text: "d", url: "https://ok.example/" }]);
+  assert.equal((globalThis as Record<string, unknown>).ZERO_WIRE_PWNED, undefined);
+});
+
 test("rejects a feed in which every item is invalid", () => {
   const body = `<rss><channel><item><title>x</title><link>https://evil.example/</link></item></channel></rss>`;
   assert.throws(() => parseFeed(body), FeedError);
