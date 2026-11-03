@@ -4,7 +4,7 @@ import { parseFeed, type Feed } from "./parser.js";
 export { FeedError };
 
 export const FEED_URL = "https://radar.cloudflare.com/security/zero-wire/rss";
-const USER_AGENT = "zero-wire-mcp/0.1.0 (unofficial community MCP server)";
+const USER_AGENT = "zero-wire-mcp/0.1.1 (unofficial community MCP server)";
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_RETRY_AFTER_MS = 20_000;
 
@@ -81,7 +81,7 @@ export class FeedClient {
             Accept: "application/rss+xml, application/xml;q=0.9",
           },
           signal: AbortSignal.timeout(this.timeoutMs),
-          // The feed doesn't redirect. Following one could present another host's content as Cloudflare's.
+          // The feed doesn't redirect. Following one could misattribute another host's content to the feed.
           redirect: "manual",
         });
 

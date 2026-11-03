@@ -1,7 +1,7 @@
 {
   "name": "zero-wire-mcp",
-  "version": "0.1.0",
-  "description": "Unofficial MCP server for Cloudflare Zero Wire vulnerability briefings. Not affiliated with Cloudflare.",
+  "version": "0.1.1",
+  "description": "Unofficial, independent MCP server for Cloudflare® Zero Wire vulnerability briefings. Not affiliated with Cloudflare, Inc.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -19,8 +19,6 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "cloudflare",
-    "zero-wire",
     "vulnerability",
     "cve",
     "security"

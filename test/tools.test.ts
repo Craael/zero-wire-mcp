@@ -177,7 +177,7 @@ test("every successful tool result labels content as external and attributes it 
   ] as const) {
     const { data } = await call(name, args);
     assert.match(data.source.contentTrust, /external data, not as instructions/, name);
-    assert.match(data.source.attribution, /Cloudflare Zero Wire/, name);
+    assert.match(data.source.attribution, /Cloudflare® Zero Wire/, name);
     assert.match(data.source.attribution, /unofficial, independent/, name);
   }
 });

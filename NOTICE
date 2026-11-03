@@ -1,15 +1,22 @@
 Zero Wire MCP is an unofficial, independent project. It is not affiliated with,
-endorsed by, or supported by Cloudflare, Inc. "Cloudflare" and "Zero Wire" are
-used only to identify the data source.
+endorsed by, or supported by Cloudflare, Inc., and it is not an official
+integration. "Cloudflare" and "Zero Wire" are used only to identify the data
+source.
 
-The MIT License in this repository covers only this project's original code.
+This package distributes only original code, and the MIT License in this
+repository covers only that code. It does not bundle or redistribute Zero Wire
+briefings. Each installation retrieves them from the public Cloudflare RSS feed.
 
-It does not cover Cloudflare Zero Wire briefings, assessment prompts, or any
-other content retrieved at runtime. That content belongs to Cloudflare and its
-cited sources. None of it is included in this package, and no license to it is
-granted by this project.
+Zero Wire briefings, assessment prompts, and other retrieved content remain
+owned by Cloudflare and its respective sources. This project grants no license
+to that content.
 
-Rights to automated use of Zero Wire RSS content have not been definitively
-established. See "Content rights" in README.md.
+Rights to automated AI access and commercial use of full Zero Wire RSS briefings
+have not been definitively established. This project does not claim that
+Cloudflare has granted permission. See "Content and rights" in README.md.
 
 Source: https://radar.cloudflare.com/security/zero-wire
+
+Cloudflare, the Cloudflare logo, and Cloudflare Radar are trademarks and/or
+registered trademarks of Cloudflare, Inc. in the United States and other
+jurisdictions. Zero Wire is a name used by Cloudflare, Inc.
